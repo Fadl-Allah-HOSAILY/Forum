@@ -2,73 +2,64 @@ package functions
 
 import (
 	"database/sql"
-	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
-type CommentRequest struct {
-    PostID  int    `json:"post_id"`
-    Content string `json:"content"`
-}
-
 func HandleAddComment(db *sql.DB) http.HandlerFunc {
-    return func(w http.ResponseWriter, r *http.Request) {
-        // Vérifie si l'utilisateur est connecté
-        userID, err := GetUserIDFromSession(r, db)
-        if err != nil {
-            http.Error(w, "Unauthorized", http.StatusUnauthorized)
-            return
-        }
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Vérifie la méthode
+		if r.Method != http.MethodPost {
+			http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+			return
+		}
 
-        // Décoder le JSON envoyé depuis le frontend
-        var req CommentRequest
-        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-            http.Error(w, "Invalid request", http.StatusBadRequest)
-            return
-        }
+		// Vérifie la session utilisateur
+		userID, err := GetUserIDFromSession(r, db)
+		if err != nil {
+			http.Error(w, "Non autorisé", http.StatusUnauthorized)
+			return
+		}
 
-        // Vérifier que le contenu n’est pas vide
-        if req.Content == "" {
-            http.Error(w, "Empty comment", http.StatusBadRequest)
-            return
-        }
+		// Récupère les champs du formulaire
+		postID := r.FormValue("post_id")
+		content := r.FormValue("content")
 
-        // Insérer le commentaire
-        _, err = db.Exec("INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)",
-            req.PostID, userID, req.Content)
-        if err != nil {
-            http.Error(w, "Database error", http.StatusInternalServerError)
-            return
-        }
+		if postID == "" || content == "" {
+			http.Error(w, "Champs manquants", http.StatusBadRequest)
+			return
+		}
 
-        // Retourner tous les commentaires mis à jour pour ce post
-        rows, err := db.Query(`
-            SELECT c.id, u.username, c.content, c.created_at
-            FROM comments c
-            JOIN users u ON u.id = c.user_id
-            WHERE c.post_id = ?
-            ORDER BY c.created_at DESC`, req.PostID)
-        if err != nil {
-            http.Error(w, "Database error", http.StatusInternalServerError)
-            return
-        }
-        defer rows.Close()
+		// Insérer le commentaire
+		_, err = db.Exec("INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)", postID, userID, content)
+		if err != nil {
+			http.Error(w, "Erreur base de données", http.StatusInternalServerError)
+			return
+		}
 
-        type CommentResponse struct {
-            ID        int    `json:"id"`
-            Username  string `json:"username"`
-            Content   string `json:"content"`
-            CreatedAt string `json:"created_at"`
-        }
+		// Récupère la liste mise à jour des commentaires
+		rows, err := db.Query(`
+			SELECT u.username, c.content, c.created_at
+			FROM comments c
+			JOIN users u ON u.id = c.user_id
+			WHERE c.post_id = ?
+			ORDER BY c.created_at DESC`, postID)
+		if err != nil {
+			http.Error(w, "Erreur base de données", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
 
-        var comments []CommentResponse
-        for rows.Next() {
-            var c CommentResponse
-            rows.Scan(&c.ID, &c.Username, &c.Content, &c.CreatedAt)
-            comments = append(comments, c)
-        }
+		// On renvoie du HTML directement pour mettre à jour dynamiquement
+		var responseHTML string
+		for rows.Next() {
+			var username, content, createdAt string
+			rows.Scan(&username, &content, &createdAt)
+			responseHTML += fmt.Sprintf("<p><strong>%s</strong>: %s <em>(%s)</em></p>", username, content, createdAt)
+		}
 
-        w.Header().Set("Content-Type", "application/json")
-        json.NewEncoder(w).Encode(comments)
-    }
+		// Réponse texte/html
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, responseHTML)
+	}
 }
