@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 
@@ -11,19 +10,7 @@ import (
 )
 
 func main() {
-	DB, err := sql.Open("sqlite3", "forum.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer DB.Close()
-
-	// initialize likes tables
-	if err := backend.InitLikesTable(DB); err != nil {
-		log.Fatalf("failed to init likes table: %v", err)
-	}
-	if err := backend.InitCommentLikesTable(DB); err != nil {
-		log.Fatalf("failed to init comment likes table: %v", err)
-	}
+	DB := backend.InitDB()
 
 	backend.LoadTemplates("templates/*.html")
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
@@ -40,6 +27,6 @@ func main() {
 	http.HandleFunc("/logout", backend.LogoutHandler(DB))
 	http.HandleFunc("/comment", backend.HandleAddComment(DB))
 
-	log.Println("Server running at http://localhost:8081")
-	log.Fatal(http.ListenAndServe(":8081", nil))
+	log.Println("Server running at http://localhost:8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }

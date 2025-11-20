@@ -29,11 +29,11 @@ func Handler(DB *sql.DB) http.HandlerFunc {
 			return
 
 		} else if r.Method != http.MethodGet {
-			// return 405 for non-GET methods
+			
 			Render(w, http.StatusMethodNotAllowed)
 			return
 		}
-		
+
 		http.Redirect(w, r, "/post", http.StatusSeeOther)
 	}
 }

@@ -231,7 +231,7 @@ func Render(w http.ResponseWriter, status int) {
 
 	// If there is an error loading the template, show a simple error message
 	if err != nil {
-		http.Error(w, "page not found", http.StatusNotFound)
+		Render(w, http.StatusNotFound)
 		return
 	}
 	// Prepare the error message based on the status code

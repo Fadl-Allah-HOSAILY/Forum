@@ -137,28 +137,3 @@ func HandleCommentLike(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-// InitLikesTable creates the likes table for posts if it doesn't exist.
-func InitLikesTable(db *sql.DB) error {
-	_, err := db.Exec(`
-	CREATE TABLE IF NOT EXISTS likes (
-		user_id INTEGER NOT NULL,
-		post_id INTEGER NOT NULL,
-		kind INTEGER NOT NULL,
-		created_at DATETIME NOT NULL DEFAULT (datetime('now')),
-		PRIMARY KEY(user_id, post_id)
-	)`)
-	return err
-}
-
-// InitCommentLikesTable creates the likes table for comments if it doesn't exist.
-func InitCommentLikesTable(db *sql.DB) error {
-	_, err := db.Exec(`
-	CREATE TABLE IF NOT EXISTS comments_like (
-		user_id INTEGER NOT NULL,
-		comment_id INTEGER NOT NULL,
-		kind INTEGER NOT NULL,
-		created_at DATETIME NOT NULL DEFAULT (datetime('now')),
-		PRIMARY KEY(user_id, comment_id)
-	)`)
-	return err
-}
