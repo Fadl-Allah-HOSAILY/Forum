@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Posts</title>
+  <link rel="stylesheet" href="/static/post.css" />
+</head>
+
+<body>
+  <!-- Top bar -->
+  <div class="bar">
+    {{if .Username}}
+    <form method="POST" action="/logout">
+  <button type="submit" class="bar-link">Logout</button>
+</form>
+
+      <p>WELCOME {{.Username}}</p>
+    {{else}}
+      <a href="/login" class="bar-link">Login</a>
+      <a href="/signup" class="bar-link">Register</a>
+    {{end}}
+  </div>
+
+  <br>
+
+  <!-- Create Post Button -->
+  <a class="Create" href="{{if .Username}}#show{{else}}/login{{end}}">
+    <button>CREATE YOUR POST</button>
+  </a>
+
+  <!-- Modal Create Post -->
+  <div id="show" class="modal {{if .Popup}}showit{{end}}">
+    <a href="{{.Path}}">
+      <button class="back"></button>
+    </a>
+
+    <div class="addpost">
+      <a href="{{.Path}}" class="close">&times;</a>
+
+      <form method="POST" action="/post" class="table-post">
+        <label>Add title</label>
+        <input class="title" type="text" name="title" maxlength="30"  placeholder="Enter your post title" value="{{.Cachetitle}}"> 
+        <br>
+
+        <label>Content</label>
+        <textarea class="content" name="content" maxlength="10000" placeholder="Write something...">{{if .Cacheconetent}}{{.Cacheconetent}}{{end}}</textarea>
+
+        <fieldset>
+          <legend>Choose categories:</legend>
+          {{range .Categories}}
+            <label>
+              <input type="checkbox" name="category_ids" value="{{.}}"> {{.}}
+            </label><br>
+          {{end}}
+        </fieldset>
+
+        {{if .Error}}
+          <p class="error">{{.Error}}</p>
+        {{end}}
+
+        <br>
+        <button class="sub_post" type="submit">Create Post</button>
+      </form>
+    </div>
+  </div>
+
+ 
+  <!-- Main Content -->
+  <main class="container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <h3>Categories</h3>
+      <ul class="category-list">
+        <li><a href="/post" >All Posts</a></li>
+        {{if .Username}}
+          <li><a href="/post?Categories={{.Username}}">My Posts</a></li>
+         
+          <li><a href="/post?Categories=liked">Liked Posts</a></li>
+
+        {{end}}
+        {{range .Categories}}
+        
+        
+          <li><a href="/post?Categories={{.}}">{{.}}</a></li>
+          
+        {{end}}
+      </ul>
+    </aside>
+
+    <!-- Posts Section -->
+    <section class="posts">
+      {{range .Posts}}
+      <article id="{{.IdPost}}"  class="post-card" style="scroll-margin-top: 100px;">
+        <div  class="post-header">
+          <h2>{{.Title}}</h2>
+        </div>
+        <p class="post-content">{{.Content}}</p>
+      {{if .Username}}
+        
+        <div  class="interaction">
+          <form method="POST" action="/like">
+            <input type="hidden" name="post_id" value="{{.IdPost}}">
+            <input type="hidden" name="value" value="1">
+            <button class="like-btn">👍 Like</button>
+          </form>
+
+          <form method="POST" action="/like">
+            <input type="hidden" name="post_id" value="{{.IdPost}}">
+            <input type="hidden" name="value" value="-1">
+            <button class="dislike-btn">👎 Dislike</button>
+          </form>
+      {{end}}
+          <span class="counts">
+            ❤️ {{.Likes}} | 💢 {{.Dislikes}}
+          </span>
+        </div>
+        
+        <!-- Comments -->
+         {{if .Username}}
+        <div class="comment-section">
+          <form method="POST" action="/comment#post{{.IdPost}}">
+            <input type="hidden" name="post_id" value="{{.IdPost}}">
+            <input type="text" name="comment" placeholder="Write a comment..." required>
+            <button type="submit" class="btn btn-small">Comment</button>
+          </form>
+          {{end}}
+          <div class="comments-list">
+            {{range .Comments}}
+            <div id="comment{{.Idcomment}}" class="comment" style="scroll-margin-top: 100px; " >
+              <span class="comment-user">{{.Username}}:</span>
+              <span class="comment-content">{{.Content}}</span>
+              <span class="comment-date">{{.CreatedAt}}</span>
+               {{if $.Username}}
+
+              <div class="interaction">
+                <form method="POST" action="/commentlike">
+                  <input type="hidden" name="comment_id" value="{{.Idcomment}}">
+                  <input type="hidden" name="value" value="1">
+                  <button class="like-btn">👍 </button>
+                </form>
+
+                <form method="POST" action="/commentlike">
+                  <input type="hidden" name="comment_id" value="{{.Idcomment}}">
+                  <input type="hidden" name="value" value="-1">
+                  <button class="dislike-btn">👎 </button>
+                </form>
+                {{end}}
+                <span class="counts">
+            ❤️ {{.Likesc}} | 💢 {{.Dislikesc}}
+          </span>
+              </div>
+            </div>
+            {{end}}
+          </div>
+        </div>
+      </article>
+      {{else}}
+        <div class="no-posts">
+          <h2>No posts found.</h2>
+        </div>
+      {{end}}
+    </section>
+  </main>
+</body>

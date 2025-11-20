@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Forum</title>
+  <link rel="stylesheet" href="/static/login.css"/>
+  
+</head>
+<body>
+  <div>
+  <div class="login-box">
+    <h2>Login</h2>
+    <form method="POST" action="/login">
+      <input type="text" name="email" placeholder="Email or username" required />
+      <input type="password" name="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+    
+    <div class="link">
+  <p>Don’t have an account? <a href="/signup">Sign up</a></p>
+
+
+</div>
+  <div class="error">
+{{if .Error}}
+  {{.Error}}
+{{end}}
+
+</div>
+</div>
+<button><a class="rtnhome" href="/">Return to home</a></button>
+  </div>
+</body>
+</html>
